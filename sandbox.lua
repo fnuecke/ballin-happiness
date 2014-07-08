@@ -20,7 +20,7 @@ local function respond(c,n,msg)
 end
 
 while true do
-    local _,_,_,_,_,c,n,cmd=event.pull("modem_message")
+    local _, _, _, _, _, c, n, cmd = event.pull("modem_message")
     print("["..c.."] "..n..": "..cmd)
     if cmd:sub(1, 1) == '=' then
         cmd = 'return '..cmd:sub(2)

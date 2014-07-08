@@ -11,7 +11,9 @@ _G.tunnelHandler = function(_, _, _, _, _, c, n, s)
   socket:flush()
 end
 
-local nick = "KiloOC"
+local f = io.open('/home/nick')
+local nick = f:read('*l')
+f:close()
 
 event.listen("modem_message", _G.tunnelHandler)
 local function name(i)
