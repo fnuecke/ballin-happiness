@@ -1,44 +1,44 @@
-local component=require("component")
-local event=require("event")
-local tunnel=component.tunnel
+local component = require("component")
+local event = require("event")
+local tunnel = component.tunnel
+local sbx = require('ubersandbox')
 
 require("term").clear()
 print("Starting sandbox runner...")
 
-local users = {Sangar=true, Kilobyte=true}
+local public = false
+local users = {Sangar = true, Kilobyte = true }
 
-local function optrequire(...)
-  local success, module = pcall(require, ...)
-  if success then
-    return module
-  end
+local pubsbx
+if public then
+    pubsbx = sbx.Sandbox.new('public.cfg')
 end
-
-local function sandbox(f)
-  return load(f,"=cmd",nil,setmetatable({},{__index=function(_,k)
-    return _ENV[k] or optrequire(k)
-  end}))
-end
+local trustsbx = sbx.Sandbox.new('trusted.cfg')
 
 local function respond(c,n,msg)
-  tunnel.send(c,n,msg)
+    tunnel.send(c, n, msg)
 end
 
 while true do
-  local _,_,_,_,_,c,n,cmd=event.pull("modem_message")
-  print("["..c.."] "..n..": "..cmd)
-  if users[n] then
-    local f,e=sandbox("return "..cmd)
-    if not f then
-      f,e=sandbox(cmd)
+    local _,_,_,_,_,c,n,cmd=event.pull("modem_message")
+    print("["..c.."] "..n..": "..cmd)
+    if cmd:sub(1, 1) == '=' then
+        cmd = 'return '..cmd:sub(2)
     end
-    if not f then
-      respond(c,n,msg)
+    cmd = "local target, sender = ...; "..cmd
+    if users[n] then
+        local status, retval = trustsbx:eval(cmd, c, n)
+        if not status then
+            retval = string.char(3)..'04'
+        end
+        respond(c, n, tostring(retval))
+    elseif public then
+        local status, retval = pubsbx:eval(cmd, c, n)
+        if not status then
+            retval = string.char(3)..'04'
+        end
+        respond(c, n, tostring(retval))
     else
-      local _,res=coroutine.resume(coroutine.create(f))
-      respond(c,n,res and tostring(res) or "done.")
+        respond(c, n, "nope.")
     end
-  else
-    respond(c,n,"nope.")
-  end
 end
