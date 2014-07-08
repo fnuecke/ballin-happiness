@@ -21,7 +21,6 @@ local function name(i)
 end
 
 return function(p, c, a, m)
-  print('wut')
   local n = name(p)
   local t = a and a[1] and name(a[1]) or n
   if c == "PRIVMSG" and (t == nick or m:sub(1, #nick + 2) == nick..", ") then
